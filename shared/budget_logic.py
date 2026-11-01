@@ -49,6 +49,11 @@ def _cat(category: str) -> str:
     return c
 
 
+def _money(x: float) -> str:
+    """Fixed-point amount for tool text: 1234567.8 -> '1,234,567.8', 40.0 -> '40'."""
+    return f"{x:,.2f}".rstrip("0").rstrip(".")
+
+
 def _total(data: dict, category: str) -> float:
     return round(sum(e["amount"] for e in data["expenses"] if e["category"] == category), 2)
 
@@ -67,7 +72,7 @@ def add_expense(amount: float, category: str, description: str) -> str:
                              "amount": round(amount, 2), "category": cat,
                              "description": str(description)[:100]})
     save_memory(data)
-    return f"נוספה הוצאה #{len(data['expenses'])}: {amount:g}₪ ל-{cat} ({description}). סה\"כ {cat}: {_total(data, cat):g}₪"
+    return f"נוספה הוצאה #{len(data['expenses'])}: {_money(amount)}₪ ל-{cat} ({description}). סה\"כ {cat}: {_money(_total(data, cat))}₪"
 
 
 def get_balance(category: str = "") -> str:
@@ -77,14 +82,14 @@ def get_balance(category: str = "") -> str:
         cats = sorted({e["category"] for e in data["expenses"]})
         if not cats:
             return "אין הוצאות עדיין"
-        return "; ".join(f"{c}: {_total(data, c):g}₪" for c in cats)
+        return "; ".join(f"{c}: {_money(_total(data, c))}₪" for c in cats)
     cat = _cat(category)
     items = [e for e in data["expenses"] if e["category"] == cat]
     if not items:
         known = sorted({e["category"] for e in data["expenses"]})
         return f"אין הוצאות בקטגוריה {cat}. קטגוריות קיימות: {', '.join(known) or 'אין'}"
-    last = ", ".join(f"{e['amount']:g}₪ {e['description']}" for e in items[-5:])
-    return f"{cat}: סה\"כ {_total(data, cat):g}₪ ב-{len(items)} הוצאות. אחרונות: {last}"
+    last = ", ".join(f"{_money(e['amount'])}₪ {e['description']}" for e in items[-5:])
+    return f"{cat}: סה\"כ {_money(_total(data, cat))}₪ ב-{len(items)} הוצאות. אחרונות: {last}"
 
 
 def _fetch_rate(currency: str) -> tuple[float, str]:
